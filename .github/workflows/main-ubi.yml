@@ -74,6 +74,63 @@ jobs:
         
         # 重新加载配置
         make defconfig
+    - name: Configure
+      run: |
+        # 基础配置
+        cat > .config << 'EOF'
+        CONFIG_TARGET_qualcommax=y
+        CONFIG_TARGET_qualcommax_ipq60xx=y
+        CONFIG_TARGET_qualcommax_ipq60xx_DEVICE_jdcloud_re-cs-02=y
+        
+        # 分区大小
+        CONFIG_TARGET_KERNEL_PARTSIZE=64
+        CONFIG_TARGET_ROOTFS_PARTSIZE=1024
+        
+        # 强制 UBI 格式
+        CONFIG_TARGET_ROOTFS_SQUASHFS=y
+        CONFIG_TARGET_ROOTFS_UBIFS=y
+        CONFIG_TARGET_ROOTFS_UBI=y
+        CONFIG_TARGET_ROOTFS_UBI_SQUASHFS=y
+        CONFIG_TARGET_IMAGES_PAD=y
+        CONFIG_TARGET_IMAGES_GZIP=y
+        
+        # 禁用其他格式
+        # CONFIG_TARGET_ROOTFS_INITRAMFS is not set
+        # CONFIG_TARGET_ROOTFS_EXT4FS is not set
+        
+        # 基础包
+        CONFIG_PACKAGE_kmod-fs-ext4=y
+        CONFIG_PACKAGE_block-mount=y
+        CONFIG_PACKAGE_smartmontools=y
+        CONFIG_PACKAGE_luci=y
+        CONFIG_PACKAGE_luci-app-firewall=y
+        EOF
+        
+        # 首次配置
+        make defconfig
+        
+        # 强制追加 UBI 配置（关键修复）
+        echo "" >> .config
+        echo "# Force UBI settings" >> .config
+        echo "CONFIG_TARGET_ROOTFS_UBI=y" >> .config
+        echo "CONFIG_TARGET_ROOTFS_UBI_SQUASHFS=y" >> .config
+        echo "CONFIG_TARGET_ROOTFS_UBIFS=y" >> .config
+        echo "CONFIG_TARGET_IMAGES_PAD=y" >> .config
+        
+        # 禁用冲突选项
+        echo "# CONFIG_TARGET_ROOTFS_INITRAMFS is not set" >> .config
+        echo "# CONFIG_TARGET_ROOTFS_EXT4FS is not set" >> .config
+        
+        # 不重新运行 defconfig，避免配置被覆盖
+        # 直接验证
+        echo "=== 验证 UBI 配置 ==="
+        grep "CONFIG_TARGET_ROOTFS_UBI" .config || (echo "UBI 未启用" && cat .config | grep -i ubi && exit 1)
+        grep "CONFIG_TARGET_ROOTFS_UBI_SQUASHFS" .config || (echo "UBI_SQUASHFS 未启用" && exit 1)
+        
+        echo "=== UBI 相关配置 ==="
+        grep -i "ubi\|images" .config | head -20
+
+
         
         # 验证关键配置
         echo "=== 验证 UBI 配置 ==="
