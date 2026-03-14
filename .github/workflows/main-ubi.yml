@@ -19,7 +19,12 @@ jobs:
           gcc-multilib g++-multilib gettext git \
           libncurses5-dev libssl-dev python3-distutils \
           rsync unzip zlib1g-dev file wget subversion \
-          patch vim time mtd-utils ubi-utils
+          patch vim time mtd-utils
+        
+        # 验证工具
+        echo "=== 验证 mtd-utils 工具 ==="
+        which mkfs.ubifs && mkfs.ubifs -V || echo "mkfs.ubifs 不可用"
+        which ubinize && ubinize -V || echo "ubinize 不可用"
         
     - name: Update Feeds
       run: |
